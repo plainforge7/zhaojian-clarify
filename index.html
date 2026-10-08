@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>照见·认知澄清智能体（交互演示版）</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg: #CDD0DB;
+  --bg-alt: #BEC2D0;
+  --ink: #2B303C;
+  --ink-soft: #5A6173;
+  --ink-faint: #767E90;
+  --seal: #2B3A55;
+  --seal-dark: #1C2738;
+  --gold: #B0600F;
+  --card: #FAFBFD;
+  --rule: #B4B9C7;
+  --brand-accent: #2B3A55;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+
+body{
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  padding: calc(48px + env(safe-area-inset-top, 0px)) 20px calc(48px + env(safe-area-inset-bottom, 0px));
+  line-height: 1.7;
+  display: flex;
+  justify-content: center;
+}
+
+.wrap{
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.14), 0 2px 10px rgba(0,0,0,0.06);
+  padding: 32px 24px 40px;
+  align-self: flex-start;
+}
+header{ margin-bottom: 56px; position: relative; }
+.mark{ font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.02em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 20px; }
+h1{ font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 40px; letter-spacing: 0.06em; color: var(--ink); display: flex; align-items: baseline; gap: 18px; }
+h1 .stroke{ color: var(--brand-accent); }
+.tagline{ font-family: 'Noto Sans SC', sans-serif; font-weight: 300; font-size: 15px; color: var(--ink); margin-top: 10px; max-width: 46ch; }
+.records-entry{ background:none; border:none; color: var(--ink-soft); font-family:'Noto Sans SC',sans-serif; font-weight:400; font-size:12.5px; padding:6px 0; cursor:pointer; letter-spacing:0.02em; }
+.records-entry:hover{ color: var(--ink); background:none; }
+.input-card{ background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 28px; position: relative; }
+.input-card label{ display:block; font-family: 'Noto Serif SC', serif; font-weight: 600; font-size: 17px; margin-bottom: 6px; color: var(--ink); }
+.input-card .hint{ font-size: 12.5px; color: var(--ink-faint); margin-bottom: 18px; }
+.disclaimer{ font-size: 12px; color: var(--ink-faint); background: var(--bg-alt); border-left: 2px solid var(--gold); padding: 10px 14px; margin-bottom: 24px; line-height: 1.6; }
+textarea{ width: 100%; min-height: 120px; border: none; border-bottom: 1px solid var(--rule); background: transparent; font-family: 'Noto Sans SC', sans-serif; font-size: 15px; font-weight: 300; color: var(--ink); resize: none; overflow: hidden; padding: 4px 0 14px; outline: none; transition: border-color 0.2s; }
+textarea:focus{ border-bottom-color: var(--seal); }
+textarea::placeholder{ color: var(--ink-faint); }
+.actions{ display:flex; justify-content: flex-end; align-items: center; gap: 16px; margin-top: 22px; }
+.status{ font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-faint); opacity: 0; transition: opacity 0.2s; }
+.status.show{ opacity: 1; }
+.char-count{ font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-faint); margin-right: auto; }
+.char-count.over-limit{ color: var(--seal-dark); }
+button{ font-family: 'Noto Serif SC', serif; font-weight: 600; font-size: 15px; letter-spacing: 0.08em; background: var(--seal); color: #FBEFE8; border: none; padding: 13px 28px; cursor: pointer; position: relative; transition: background 0.2s, transform 0.1s; }
+button:hover{ background: var(--seal-dark); }
+button:active{ transform: scale(0.98); }
+button:disabled{ background: var(--ink-faint); cursor: default; }
+#submitBtn{ display:inline-flex; align-items:center; justify-content:center; padding:10px; background:transparent; color: var(--ink-soft); }
+#submitBtn:hover{ background:transparent; color: var(--ink); }
+#submitBtn:disabled{ background:transparent; color: var(--ink-faint); }
+.btn-quiet{ padding:6px 14px; cursor:pointer; font-size:12px; background:transparent; border:1px solid var(--rule); color:var(--ink-soft); }
+.btn-quiet:hover{ border-color: var(--ink-soft); color: var(--ink); background:transparent; }
+.notice{ padding:16px; background:var(--bg-alt); border-left:3px solid var(--gold); font-size:14px; color:var(--ink-soft); }
+.notice-strong{ border-left-color: var(--ink-soft); color: var(--ink); }
+.error{ margin-top: 18px; font-size: 13px; color: var(--seal-dark); display: none; }
+.error.show{ display: block; }
+#results{ margin-top: 48px; position: relative; }
+.copy-icon-btn{ position:absolute; top:-36px; right:0; background:transparent; border:none; padding:6px; cursor:pointer; color:var(--ink-faint); display:inline-flex; align-items:center; justify-content:center; }
+.copy-icon-btn:hover{ background:transparent; color:var(--ink); }
+.seal-card{ margin-bottom: 40px; opacity: 0; animation: rise 0.5s ease forwards; }
+.seal-card:nth-child(2){ animation-delay: 0.15s; }
+.seal-card:nth-child(3){ animation-delay: 0.3s; }
+@keyframes rise{ from{ opacity: 0; transform: translateY(10px); } to{ opacity: 1; transform: translateY(0); } }
+.pattern-body{ flex: 1; padding-top: 4px; }
+.pattern-name{ font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 19px; color: var(--ink); margin-bottom: 8px; }
+.pattern-explain{ font-size: 14px; color: var(--ink-soft); margin-bottom: 16px; }
+.scripts-label{ font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--ink); text-transform: uppercase; margin-bottom: 8px; display: inline-block; background: #F7B557; padding: 3px 8px; }
+.scripts{ list-style: none; }
+.scripts li{ font-size: 14.5px; color: var(--ink); padding: 8px 0 8px 20px; border-left: 2px solid var(--rule); margin-bottom: 6px; position: relative; }
+.scripts li::before{ content: '·'; position: absolute; left: -2px; top: 8px; color: var(--seal); font-size: 20px; line-height: 1; }
+.cooling{ margin-top: 44px; padding-top: 28px; border-top: 1px solid var(--rule); position: relative; }
+.cooling-label{ font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 10px; }
+.cooling-text{ font-family: 'Noto Serif SC', serif; font-weight: 600; font-size: 17px; color: var(--ink); font-style: normal; }
+.panel{ margin-top: 8px; }
+.panel-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.link-btn{ background:none; border:none; color: var(--ink-soft); font-family:'Noto Sans SC',sans-serif; font-weight:400; font-size:13px; padding:6px 4px; cursor:pointer; letter-spacing:0.02em; }
+.link-btn:hover{ color: var(--ink); background:none; }
+.link-btn.danger{ color: var(--seal); }
+.link-btn.danger:hover{ color: var(--seal-dark); }
+.record-item{ padding:14px 0; border-bottom:1px solid var(--rule); cursor:pointer; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.record-item:hover .record-snippet{ color: var(--ink); }
+.record-date{ font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--ink-faint); flex:0 0 auto; padding-top:2px; }
+.record-snippet{ font-size:14px; color: var(--ink-soft); flex:1; line-height:1.5; }
+.record-del{ background:none; border:none; color: var(--ink-faint); font-size:16px; cursor:pointer; flex:0 0 auto; padding:0 4px; }
+.record-del:hover{ color: var(--seal); }
+.empty-note{ font-size:13px; color: var(--ink-faint); padding:24px 0; text-align:center; }
+.checkin{ margin-top:32px; padding-top:20px; border-top:1px solid var(--rule); }
+.checkin-label{ font-size:13px; color: var(--ink-soft); margin-bottom:10px; }
+.checkin-btn{ margin-right:8px; margin-bottom:8px; }
+.checkin-reply{ margin-top:10px; font-size:13px; color: var(--ink-soft); min-height:1.2em; }
+/* 统一手机版式：宽窄屏不再分家 */
+body{ padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.wrap{ max-width: 420px; border-radius:0; box-shadow:none; padding:0; background:transparent; }
+h1{ font-size: 30px; }
+.records-entry{ margin-top:0; }
+
+/* 字号层级：免责声明覆盖 */
+.disclaimer{ font-size: 12px; line-height: 1.6; color: var(--ink-faint); }
+
+/* 我的记录：跟标题同一行，靠右 */
+.records-entry{ position: static; margin: 0 0 0 auto; }
+
+.records-entry{ border:none; text-decoration: underline; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark">照见·认知澄清智能体 · 交互演示版</div>
+    <h1><span class="stroke">照见</span><button id="recordsEntryBtn" class="records-entry">我的记录</button></h1>
+    <p class="tagline">这不是你的错。</p>
+  </header>
+
+  <div id="formView">
+  <div class="input-card">
+    <p class="disclaimer">【演示版】本页面使用预设结果，仅展示产品形态与交互流程，不代表真实模型输出。正式版本基于AI生成建议，仅用于帮助你梳理和理解互动场景，不能替代专业心理咨询或法律意见。如果你正处于人身安全风险中，请优先联系当地警方或专业求助热线。</p>
+    <label for="scene">发生了什么</label>
+    <p class="hint">谁说了什么。你当时怎么反应。后来怎么想。</p>
+    <textarea id="scene" placeholder="例如：我说“那句话让我难受”，她说「你太敏感了」，我当时说没事，现在我发现那之后几天里其实我都很不舒服"></textarea>
+    <div id="demoChips" style="margin-top:14px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+    <div class="actions">
+      <span class="char-count" id="charCount"></span>
+      <span class="status" id="status"></span>
+      <button id="submitBtn" aria-label="看清这段关系" title="看清这段关系"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+    </div>
+    <p class="error" id="errorMsg"></p>
+  </div>
+
+  <div id="results"></div>
+  </div>
+
+  <div id="recordsView" class="panel" style="display:none;">
+    <div class="panel-head">
+      <button id="backFromRecordsBtn" class="link-btn" aria-label="返回" title="返回"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+      <button id="clearAllBtn" class="link-btn danger">清空全部</button>
+    </div>
+    <div id="recordsList"></div>
+  </div>
+
+  <div id="recordDetailView" class="panel" style="display:none;">
+    <div class="panel-head">
+      <button id="backFromDetailBtn" class="link-btn">← 返回列表</button>
+      <button id="deleteRecordBtn" class="link-btn danger">删除这条</button>
+    </div>
+    <div id="recordDetailContent"></div>
+  </div>
+</div>
+
+<script>
+const btn = document.getElementById('submitBtn');
+const status = document.getElementById('status');
+const errorMsg = document.getElementById('errorMsg');
+const resultsEl = document.getElementById('results');
+const sceneEl = document.getElementById('scene');
+const charCountEl = document.getElementById('charCount');
+const formViewEl = document.getElementById('formView');
+const recordsViewEl = document.getElementById('recordsView');
+const recordDetailViewEl = document.getElementById('recordDetailView');
+
+// ---- 输入保护(最小方案) ----
+// 只做长度门槛拦截，不做自动摘要/截断，避免在用户确认前替其压缩信息
+const MAX_INPUT_CHARS = 1200;
+const INPUT_TOO_LONG_MESSAGE = '内容较长，建议先说清楚一件具体的事，我们可以分几轮补充细节。请精简到1200字以内再提交。';
+
+function updateCharCount(){
+  const len = sceneEl.value.length;
+  const overLimit = len > MAX_INPUT_CHARS;
+  charCountEl.textContent = `${len}/${MAX_INPUT_CHARS}`;
+  charCountEl.classList.toggle('over-limit', overLimit);
+  btn.disabled = overLimit;
+  sceneEl.style.height = 'auto';
+  sceneEl.style.height = sceneEl.scrollHeight + 'px';
+  return overLimit;
+}
+
+sceneEl.addEventListener('input', updateCharCount);
+updateCharCount();
+
+// ---- 演示数据：预设结果（脱敏示例，非真实模型输出） ----
+// 正式版中，该结构由后端在“旧版输出 + 新版证据账本 + 规则仲裁”之后返回；
+// 本演示版内置两份脱敏示例结果，仅用于展示产品形态与交互流程。
+const DEMO_RESULTS = [
+  {
+    scene: '我提到他答应修水管一直没修，他说我总是翻旧账、故意让他难堪，还说他最近压力大、我不体谅他。我当场道了歉，但事后越想越不对劲。',
+    parsed: {
+      patterns: [
+        {
+          name: '责任反转',
+          explain: '你提出一个具体诉求，回应却把焦点转移到你的态度问题上，原本要谈的事被绕开了。',
+          scripts: ['水管的事我们还没说完，先把这个聊完。', '我不想争论谁的态度好，只想解决水管这件事。']
+        },
+        {
+          name: '愧疚施压',
+          explain: '用“压力大、你不体谅”让你收回诉求，把合理要求包装成一种亏欠。',
+          scripts: ['你的压力我关心，但这和我提的事情是两件事，可以分开聊。']
+        }
+      ],
+      cooling: '先分清一件事：你难受，是因为他确实没做到，还是因为你觉得自己“不该提”。'
+    }
+  },
+  {
+    scene: '他喝醉后摔了杯子，碎片崩到我脚边，他说再提分手就一起死。我当时安抚了他，现在心里很慌，不知道这算不算危险。',
+    parsed: {
+      安全提示: true,
+      仲裁覆盖: true,
+      仲裁文本: '演示说明：该案例涉及安全关注且条目间存在矛盾，此处展示仲裁介入后采用的谨慎表述。仲裁触发条件与文案不公开。',
+      证据来源: [
+        { 来源: '用户报告', 原始依据: '「再提分手就一起死」（当事人原话）' },
+        { 来源: '记忆性复述', 原始依据: '碎片崩到脚边（现场描述）' }
+      ],
+      patterns: [
+        {
+          name: '威胁式挽留',
+          explain: '以伤害自己或对方来阻止关系结束，这是明确的安全信号，不是普通的情绪表达。',
+          scripts: ['我现在要离开这里，先去安全的地方。', '这件事我要和信任的人或专业人士商量。']
+        }
+      ],
+      cooling: '你的安全比这段关系本身更重要。'
+    }
+  }
+];
+
+function normalizeText(s){
+  return (s || '').replace(/\s+/g, '');
+}
+
+// ---- 演示入口 ----
+async function analyze(){
+  const scene = sceneEl.value.trim();
+  if(!scene){
+    showError('没写。');
+    return;
+  }
+  if(scene.length > MAX_INPUT_CHARS){
+    showError(INPUT_TOO_LONG_MESSAGE);
+    return;
+  }
+  errorMsg.classList.remove('show');
+  resultsEl.innerHTML = '';
+  btn.disabled = true;
+  status.textContent = '思考中';
+  status.classList.add('show');
+
+  try{
+    // 模拟响应延迟，保持与真实交互一致的节奏
+    await new Promise(r => setTimeout(r, 500));
+    const preset = DEMO_RESULTS.find(d => normalizeText(d.scene) === normalizeText(scene));
+    if(!preset){
+      showError('演示版仅支持下方两个预设示例，点击示例按钮即可体验。');
+      return;
+    }
+    addRecord(scene, preset.parsed);
+    renderResults(preset.parsed);
+  }finally{
+    btn.disabled = false;
+    status.classList.remove('show');
+  }
+}
+
+// 示例入口按钮
+(function buildDemoChips(){
+  const chipsWrap = document.getElementById('demoChips');
+  if(!chipsWrap) return;
+  DEMO_RESULTS.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.className = 'btn-quiet';
+    b.textContent = '示例 ' + (i + 1);
+    b.addEventListener('click', () => {
+      sceneEl.value = d.scene;
+      updateCharCount();
+      analyze();
+    });
+    chipsWrap.appendChild(b);
+  });
+})();
+
+function showError(msg){
+  errorMsg.textContent = msg;
+  errorMsg.classList.add('show');
+}
+
+function renderResults(parsed){
+  resultsEl.innerHTML = '';
+if(parsed.insufficient_info){
+    const infoNotice = document.createElement('div');
+    infoNotice.className = 'notice';
+    infoNotice.style.marginBottom = '24px';
+    infoNotice.innerHTML = '没有看到具体的事。<br>说一句ta说过的话。';
+    resultsEl.appendChild(infoNotice);
+  }
+
+  renderPatternCards(resultsEl, parsed.patterns);
+
+  if(parsed.安全提示){
+    const safetyNotice = document.createElement('div');
+    safetyNotice.className = 'notice notice-strong';
+    safetyNotice.style.marginTop = '20px';
+    safetyNotice.innerHTML = `
+      <div style="margin-bottom:8px;">如果你感觉到不安全，这里有专业支持可以联系：</div>
+      <div>全国心理援助热线 <strong>12356</strong>（24小时，全国统一号码）</div>
+    `;
+    resultsEl.appendChild(safetyNotice);
+  }
+
+  if(parsed.仲裁覆盖){
+    const arbitrationNotice = document.createElement('div');
+    arbitrationNotice.className = 'notice';
+    arbitrationNotice.style.marginTop = '20px';
+    arbitrationNotice.textContent = parsed.仲裁文本 || '';
+    resultsEl.appendChild(arbitrationNotice);
+  }
+
+  if(parsed.证据来源 && parsed.证据来源.length > 0){
+    const evidenceBlock = document.createElement('details');
+    evidenceBlock.style.cssText = 'margin-top:20px; font-size:13px; color:var(--ink-soft);';
+    const summary = document.createElement('summary');
+    summary.style.cssText = 'cursor:pointer; color:var(--ink-faint);';
+    summary.textContent = '查看依据';
+    evidenceBlock.appendChild(summary);
+
+    const list = document.createElement('ul');
+    list.style.cssText = 'margin-top:10px; padding-left:18px;';
+    parsed.证据来源.forEach(item => {
+      const li = document.createElement('li');
+      li.style.marginBottom = '6px';
+      li.textContent = `[${item.来源}] ${item.原始依据}`;
+      list.appendChild(li);
+    });
+    evidenceBlock.appendChild(list);
+    resultsEl.appendChild(evidenceBlock);
+  }
+
+  renderCooling(resultsEl, parsed.cooling);
+
+  const checkin = document.createElement('div');
+  checkin.className = 'checkin';
+  checkin.innerHTML = `
+    <div class="checkin-label">现在感觉怎么样？</div>
+    <button class="btn-quiet checkin-btn" data-r="better">好一点了</button>
+    <button class="btn-quiet checkin-btn" data-r="rough">还是很乱</button>
+    <button class="btn-quiet checkin-btn" data-r="pass">先不说了</button>
+    <div class="checkin-reply" id="checkinReply"></div>
+  `;
+  resultsEl.appendChild(checkin);
+
+  const CHECKIN_REPLIES = {
+    better: '那就好，慢慢来。',
+    rough: '没关系，不用急着好起来。',
+    pass: '好，那就先到这里。'
+  };
+
+  checkin.querySelectorAll('.checkin-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.getElementById('checkinReply').textContent = CHECKIN_REPLIES[b.dataset.r] || '';
+    });
+  });
+
+  const COPY_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+  const CHECK_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  const copyBtn = document.createElement('button');
+  copyBtn.innerHTML = COPY_ICON;
+  copyBtn.className = 'copy-icon-btn';
+  copyBtn.setAttribute('aria-label', '复制结果');
+  copyBtn.setAttribute('title', '复制结果');
+  copyBtn.addEventListener('click', () => {
+    const lines = [];
+    (parsed.patterns || []).forEach(p => {
+      lines.push(p.name);
+      lines.push(p.explain);
+      (p.scripts || []).forEach(s => lines.push('· ' + s));
+      lines.push('');
+    });
+    if(Array.isArray(parsed.证据来源) && parsed.证据来源.length){
+      lines.push('依据：');
+      parsed.证据来源.forEach(item => lines.push(`[${item.来源}] ${item.原始依据}`));
+      lines.push('');
+    }
+    if(parsed.cooling) lines.push('冷却提醒：' + parsed.cooling);
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      copyBtn.innerHTML = CHECK_ICON;
+      setTimeout(() => { copyBtn.innerHTML = COPY_ICON; }, 1500);
+    });
+  });
+  resultsEl.appendChild(copyBtn);
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderPatternCards(container, patterns){
+  (patterns || []).forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'seal-card';
+    card.innerHTML = `
+      <div class="pattern-body">
+        <div class="pattern-name">${escapeHtml(p.name || '')}</div>
+        <div class="pattern-explain">${escapeHtml(p.explain || '')}</div>
+        <div class="scripts-label">可以这样说</div>
+        <ul class="scripts">
+          ${(p.scripts || []).map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderCooling(container, coolingText){
+  if(!coolingText) return;
+  const cooling = document.createElement('div');
+  cooling.className = 'cooling';
+  cooling.innerHTML = `
+    <div class="cooling-label">冷却提醒</div>
+    <div class="cooling-text">${escapeHtml(coolingText)}</div>
+  `;
+  container.appendChild(cooling);
+}
+
+btn.addEventListener('click', analyze);
+sceneEl.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    analyze();
+  }
+});
+
+// ---- 历史记录（本地 localStorage，不上传） ----
+const RECORDS_KEY = 'zhaojian_records_v1';
+
+function loadRecords(){
+  try{
+    const raw = localStorage.getItem(RECORDS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){
+    return [];
+  }
+}
+
+function saveRecords(records){
+  try{
+    localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
+  }catch(e){
+    console.error('保存记录失败', e);
+  }
+}
+
+function deleteRecord(id){
+  const remaining = loadRecords().filter(x => x.id !== id);
+  saveRecords(remaining);
+}
+
+function addRecord(scene, parsed){
+  const records = loadRecords();
+  records.unshift({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    ts: Date.now(),
+    scene: scene,
+    parsed: parsed
+  });
+  saveRecords(records);
+}
+
+function formatDate(ts){
+  const d = new Date(ts);
+  return `${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function switchView(name){
+  formViewEl.style.display = (name === 'form') ? '' : 'none';
+  recordsViewEl.style.display = (name === 'records') ? '' : 'none';
+  recordDetailViewEl.style.display = (name === 'detail') ? '' : 'none';
+}
+
+function showFormView(){
+  switchView('form');
+}
+
+function showRecordsView(){
+  switchView('records');
+  renderRecordsList();
+}
+
+function showRecordDetailView(id){
+  const records = loadRecords();
+  const record = records.find(r => r.id === id);
+  if(!record) return;
+  switchView('detail');
+  renderRecordDetail(record);
+}
+
+function renderRecordsList(){
+  const records = loadRecords();
+  const listEl = document.getElementById('recordsList');
+  listEl.innerHTML = '';
+
+  if(records.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty-note';
+    empty.textContent = '没有记录。';
+    listEl.appendChild(empty);
+    return;
+  }
+
+  records.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'record-item';
+
+    const left = document.createElement('div');
+    left.style.cssText = 'flex:1; min-width:0;';
+    const dateEl = document.createElement('div');
+    dateEl.className = 'record-date';
+    dateEl.textContent = formatDate(r.ts);
+    const snippetEl = document.createElement('div');
+    snippetEl.className = 'record-snippet';
+    snippetEl.textContent = r.scene;
+    left.appendChild(dateEl);
+    left.appendChild(snippetEl);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'record-del';
+    delBtn.textContent = '×';
+    delBtn.setAttribute('aria-label', '删除这条记录');
+    delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteRecord(r.id);
+      renderRecordsList();
+    });
+
+    item.appendChild(left);
+    item.appendChild(delBtn);
+    item.addEventListener('click', () => showRecordDetailView(r.id));
+    listEl.appendChild(item);
+  });
+}
+
+function renderRecordDetail(record){
+  const content = document.getElementById('recordDetailContent');
+  content.innerHTML = '';
+
+  const dateEl = document.createElement('div');
+  dateEl.className = 'record-date';
+  dateEl.style.marginBottom = '12px';
+  dateEl.textContent = formatDate(record.ts);
+  content.appendChild(dateEl);
+
+  const sceneBlock = document.createElement('div');
+  sceneBlock.style.cssText = 'font-size:15px; color:var(--ink); line-height:1.7; margin-bottom:32px; white-space:pre-wrap;';
+  sceneBlock.textContent = record.scene;
+  content.appendChild(sceneBlock);
+
+  const parsed = record.parsed || {};
+
+  renderPatternCards(content, parsed.patterns);
+
+  renderCooling(content, parsed.cooling);
+
+  document.getElementById('deleteRecordBtn').onclick = () => {
+    deleteRecord(record.id);
+    showRecordsView();
+  };
+}
+
+document.getElementById('recordsEntryBtn').addEventListener('click', showRecordsView);
+document.getElementById('backFromRecordsBtn').addEventListener('click', showFormView);
+document.getElementById('backFromDetailBtn').addEventListener('click', showRecordsView);
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  saveRecords([]);
+  renderRecordsList();
+});
+
+</script>
+</body>
+</html>

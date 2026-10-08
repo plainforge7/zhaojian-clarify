@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.DS_Store
+api_usage_log.jsonl
+feedback_log.jsonl
+*.log

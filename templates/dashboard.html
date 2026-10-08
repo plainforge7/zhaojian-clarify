@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>照见 Evaluation Dashboard</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #f7f7f5; margin: 0; padding: 40px; color: #2b2b2b; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 40px 0 16px; color: #444; }
+  .subtitle { color: #888; margin-bottom: 32px; }
+  .summary { display: flex; gap: 20px; margin-bottom: 20px; }
+  .card { background: white; border-radius: 12px; padding: 20px 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card .num { font-size: 32px; font-weight: 700; }
+  .card .label { color: #888; font-size: 13px; margin-top: 4px; }
+  .pass { color: #2e7d32; }
+  .fail { color: #c62828; }
+  .bar-container { background: #eee; border-radius: 8px; height: 10px; width: 300px; margin-top: 8px; overflow: hidden; }
+  .bar-fill { background: #2e7d32; height: 100%; }
+  .empty-note { color: #999; font-size: 13px; padding: 16px; background: white; border-radius: 10px; }
+  .failure-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .failure-bar-label { width: 160px; font-size: 13px; color: #555; }
+  .failure-bar-track { flex: 1; background: #f0f0f0; border-radius: 6px; height: 18px; overflow: hidden; }
+  .failure-bar-fill { background: #c62828; height: 100%; }
+  .failure-bar-count { width: 30px; font-size: 13px; color: #888; }
+  .group { background: white; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .group-title { padding: 14px 20px; background: #fafafa; font-weight: 600; font-size: 14px; border-bottom: 1px solid #eee; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 12px 20px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  th { color: #999; font-weight: 500; font-size: 12px; text-transform: uppercase; }
+  tr:last-child td { border-bottom: none; }
+  .status-pass { color: #2e7d32; font-weight: 600; }
+  .status-fail { color: #c62828; font-weight: 600; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; background: #f0f0f0; color: #555; }
+  details summary { cursor: pointer; color: #666; margin-top: 4px; }
+  .raw { background: #f7f7f5; padding: 10px; border-radius: 6px; margin-top: 6px; white-space: pre-wrap; font-size: 12px; color: #555; }
+</style>
+</head>
+<body>
+
+<h1>照见 Evaluation Dashboard</h1>
+<div class="subtitle">测试集运行结果一览</div>
+
+<div class="summary">
+  <div class="card">
+    <div class="num">{{ results|selectattr("match")|list|length }}/{{ results|length }}</div>
+    <div class="label">通过率</div>
+    <div class="bar-container">
+      <div class="bar-fill" style="width: {{ (results|selectattr('match')|list|length / results|length * 100)|round(0) }}%"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="num fail">{{ results|rejectattr("match")|list|length }}</div>
+    <div class="label">失败用例数</div>
+  </div>
+</div>
+
+<h2>失败类型分布</h2>
+{% set failures = results|rejectattr("match")|list %}
+{% if failures|length == 0 %}
+  <div class="empty-note">暂无失败用例——全部测试通过</div>
+{% else %}
+  {% set ftypes = failures|map(attribute="failure_type")|unique|list %}
+  <div class="card" style="width: 100%; box-sizing: border-box;">
+    {% for ft in ftypes %}
+    {% set count = failures|selectattr("failure_type", "equalto", ft)|list|length %}
+    <div class="failure-bar-row">
+      <div class="failure-bar-label">{{ ft }}</div>
+      <div class="failure-bar-track">
+        <div class="failure-bar-fill" style="width: {{ (count / failures|length * 100)|round(0) }}%"></div>
+      </div>
+      <div class="failure-bar-count">{{ count }}</div>
+    </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<h2>按测试矩阵分组</h2>
+{% set matrices = results|map(attribute="matrix")|unique|list %}
+{% for m in matrices %}
+<div class="group">
+  <div class="group-title">{{ m }}</div>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>预期</th>
+      <th>实际</th>
+      <th>状态</th>
+    </tr>
+    {% for r in results if r.matrix == m %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td><span class="tag">{{ r.expect }}</span></td>
+      <td>{{ r.actual }}</td>
+      <td>
+        {% if r.match %}
+          <span class="status-pass">✓ 通过</span>
+        {% else %}
+          <span class="status-fail">✗ 失败 ({{ r.failure_type }})</span>
+          <details>
+            <summary>查看原始输出</summary>
+            <div class="raw">{{ r.raw_output }}</div>
+          </details>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endfor %}
+
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>照见 三版本整合 Dashboard</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #f7f7f5; margin: 0; padding: 40px; color: #2b2b2b; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 40px 0 16px; color: #444; }
+  .subtitle { color: #888; margin-bottom: 32px; font-size: 13px; }
+  .summary { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+  .card { background: white; border-radius: 12px; padding: 20px 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card .num { font-size: 32px; font-weight: 700; }
+  .card .label { color: #888; font-size: 13px; margin-top: 4px; }
+  .pass { color: #2e7d32; }
+  .fail { color: #c62828; }
+  .warn { color: #b8860b; }
+
+  .review-banner { background: #FDF3E3; border-left: 4px solid #b8860b; border-radius: 0 10px 10px 0; padding: 16px 20px; margin-bottom: 32px; font-size: 14px; }
+  .review-banner strong { color: #8a5a00; }
+  .review-banner .case-tag { display: inline-block; background: #fff; border: 1px solid #e2c98a; border-radius: 6px; padding: 2px 8px; margin: 4px 4px 0 0; font-size: 12.5px; }
+
+  .empty-note { color: #999; font-size: 13px; padding: 16px; background: white; border-radius: 10px; }
+
+  .case-card { background: white; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .case-card.inconsistent { box-shadow: 0 0 0 2px #e9c46a, 0 1px 3px rgba(0,0,0,0.08); }
+  .case-head { padding: 14px 20px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .case-id { font-weight: 700; font-size: 14px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+  .badge-green { background: #E8F5E9; color: #2e7d32; }
+  .badge-red { background: #FDECEA; color: #c62828; }
+  .badge-gray { background: #f0f0f0; color: #666; }
+  .badge-amber { background: #FDF3E3; color: #8a5a00; }
+  .case-body { padding: 16px 20px; font-size: 13.5px; line-height: 1.6; }
+  .row-label { color: #999; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 6px; }
+  .row-label:first-child { margin-top: 0; }
+  .old-summary { color: #333; }
+  .evidence-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .evidence-table th, .evidence-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #f0f0f0; font-size: 12.5px; }
+  .evidence-table th { color: #999; font-weight: 500; font-size: 11px; text-transform: uppercase; }
+  .safety-yes { color: #c62828; font-weight: 600; }
+  .safety-no { color: #999; }
+  .conflict-item { padding: 8px 10px; background: #FFF8E1; border-radius: 6px; margin-bottom: 6px; font-size: 12.5px; }
+  .arbitration-text { padding: 10px 12px; background: #FDF3E3; border-left: 3px solid #b8860b; border-radius: 0 6px 6px 0; }
+  details summary { cursor: pointer; color: #666; margin-top: 10px; font-size: 12.5px; }
+  .raw { background: #f7f7f5; padding: 10px; border-radius: 6px; margin-top: 6px; white-space: pre-wrap; font-size: 11.5px; color: #555; max-height: 400px; overflow-y: auto; }
+</style>
+</head>
+<body>
+
+<h1>照见 三版本整合 Dashboard</h1>
+<div class="subtitle">新旧版本并行 + 规则仲裁 &middot; 数据来源：comparison_results_v1_1.json（{{ summary.total }}个黄金案例）</div>
+
+<div class="summary">
+  <div class="card">
+    <div class="num {% if summary.inconsistent == 0 %}pass{% else %}warn{% endif %}">{{ summary.consistent }}/{{ summary.total - summary.errored }}</div>
+    <div class="label">仲裁判定一致</div>
+  </div>
+  <div class="card">
+    <div class="num">{{ summary.arbitrated }}</div>
+    <div class="label">触发仲裁覆盖次数</div>
+  </div>
+  <div class="card">
+    <div class="num {% if summary.safety_flagged > 0 %}fail{% endif %}">{{ summary.safety_flagged }}</div>
+    <div class="label">安全提示触发次数</div>
+  </div>
+  {% if summary.errored > 0 %}
+  <div class="card">
+    <div class="num fail">{{ summary.errored }}</div>
+    <div class="label">调用出错</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if summary.inconsistent > 0 %}
+<div class="review-banner">
+  <strong>{{ summary.inconsistent }} 个案例仲裁判定不一致，需要人工核查：</strong><br>
+  {% for r in results if r.get("仲裁判定") and r.get("仲裁判定") != "一致" %}
+  <span class="case-tag">{{ r.案例名 }}</span>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2>逐案例详情</h2>
+
+{% for r in results %}
+<div class="case-card {% if r.get('仲裁判定') and r.get('仲裁判定') != '一致' %}inconsistent{% endif %}">
+  <div class="case-head">
+    <span class="case-id">{{ r.案例名 }}</span>
+    {% if "错误" in r %}
+      <span class="badge badge-red">调用出错</span>
+    {% else %}
+      {% if r.get("仲裁判定") == "一致" %}
+        <span class="badge badge-green">仲裁判定一致</span>
+      {% else %}
+        <span class="badge badge-amber">仲裁判定不一致 · 需人工核查</span>
+      {% endif %}
+      {% if r.get("统合版_仲裁覆盖") %}
+        <span class="badge badge-amber">仲裁已覆盖</span>
+      {% else %}
+        <span class="badge badge-gray">未触发仲裁</span>
+      {% endif %}
+      {% if r.get("统合版_安全提示") %}
+        <span class="badge badge-red">安全提示</span>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <div class="case-body">
+    {% if "错误" in r %}
+      <div class="row-label">错误信息</div>
+      <div class="old-summary">{{ r.错误 }}</div>
+    {% else %}
+      <div class="row-label">旧版判定</div>
+      <div class="old-summary">
+        {% set old = r.get("旧版输出", {}) %}
+        {% if old.get("patterns") %}
+          {% for p in old.patterns %}<strong>{{ p.name }}</strong>：{{ p.explain }}<br>{% endfor %}
+        {% elif old.get("no_concern") %}
+          <span class="badge badge-green" style="margin-right:6px;">安全/无需担忧</span>{{ old.no_concern }}
+        {% elif old.get("internal_policy") %}
+          <span class="badge badge-gray" style="margin-right:6px;">内部政策</span>{{ old.internal_policy }}
+        {% elif old.get("insufficient_info") %}
+          <span class="badge badge-gray" style="margin-right:6px;">信息不足</span>{{ old.insufficient_info }}
+        {% else %}
+          <span style="color:#999;">（无内容）</span>
+        {% endif %}
+      </div>
+
+      <div class="row-label">新版证据账本（{{ r.get("新版证据账本", [])|length }}条）</div>
+      <table class="evidence-table">
+        <tr><th>ID</th><th>内容</th><th>来源</th><th>证据状态</th><th>安全关注</th><th>原始依据</th></tr>
+        {% for e in r.get("新版证据账本", []) %}
+        <tr>
+          <td>{{ e.id }}</td>
+          <td>{{ e.内容|join("、") if e.内容 is iterable and e.内容 is not string else e.内容 }}</td>
+          <td>{{ e.来源 }}</td>
+          <td>{{ e.证据状态 }}</td>
+          <td class="{% if e.安全关注标记 == '是' %}safety-yes{% else %}safety-no{% endif %}">{{ e.安全关注标记 }}</td>
+          <td>{{ e.原始依据 }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      {% if r.get("新版矛盾清单") %}
+        <div class="row-label">矛盾清单（{{ r.新版矛盾清单|length }}条）</div>
+        {% for c in r.新版矛盾清单 %}
+        <div class="conflict-item">{{ c.证据项id }} ↔ {{ c.冲突指向 }} · {{ c.子类型 }}<br>{{ c.说明 }}</div>
+        {% endfor %}
+      {% endif %}
+
+      {% if r.get("统合版_仲裁文本") %}
+        <div class="row-label">仲裁文本（最终展示给用户）</div>
+        <div class="arbitration-text">{{ r.统合版_仲裁文本 }}</div>
+      {% endif %}
+
+      <details>
+        <summary>查看本案例完整原始数据</summary>
+        <div class="raw">{{ r | tojson(indent=2) }}</div>
+      </details>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+</body>
+</html>
