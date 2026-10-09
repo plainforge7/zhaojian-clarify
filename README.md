@@ -70,7 +70,7 @@
 - `test_cases_get_history.json`：9 个人工设计的测试用例（该调用的、不该调用的、历史为空的）
 - `scorer.py`：自动评分器
 - `real_agent.py`：接入真实 Claude API 的完整实现（user_id 后端强制注入、模型不可篡改）
-- `get_history_score_report.json`：4 轮真实模型调用结果，36 个判定 35 正确（单次 8/9～9/9，黄金集仅 9 例）
+- `get_history_score_report.json`：4 轮真实模型调用结果，36 个判定 35 正确（单次 8/9～9/9，黄金集仅 9 例）；逐条回复正文不随仓库公开（保护产品话术风格），调用判定与传参字段保留供复核
 
 运行需要设置 `ANTHROPIC_API_KEY` 环境变量：
 
